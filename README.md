@@ -1,6 +1,7 @@
 <div align="center">
   # SmoothNormal
 </div>
+
 # Purpose
 The purpose of this Unity package is to calculate smooth normals for objects that require outlining. In cartoon rendering, smooth normal information is often needed to achieve a good outlining effect.
 # Algorithm
