@@ -1,0 +1,100 @@
+#pragma kernel CSMain
+#pragma kernel VertexMain
+// #pragma kernel SmoothNormalMain
+
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+
+// Two points square-distance smaller than this value will be treated as the same point
+#define DISTANCE_THRESHOLD 1e-10
+struct TriangleData
+{
+    float4 faceNormal;
+    float4 vertWeights;
+    float4 vertIndices;
+};
+
+uint _TrianglesCounts;
+uint _VerticesCounts;
+RWBuffer<float4> _VertPosBuffer;
+RWBuffer<float4> _VertNormalsBuffer;
+RWBuffer<float4> _VertTangentsBuffer;
+
+RWBuffer<int> _TrianglesBuffer;
+RWBuffer<float4> _SmoothNormalsBuffer;
+
+RWStructuredBuffer<TriangleData> _TriangleDataBuffer;
+
+[numthreads(64,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    uint triangleIndex = id.x * 3;
+    if (triangleIndex + 2 > _TrianglesCounts)
+        return;
+
+    float3 a = _VertPosBuffer[_TrianglesBuffer[triangleIndex + 1]].xyz - _VertPosBuffer[_TrianglesBuffer[triangleIndex]].xyz;
+    float3 b = _VertPosBuffer[_TrianglesBuffer[triangleIndex + 2]].xyz - _VertPosBuffer[_TrianglesBuffer[triangleIndex + 1]].xyz;
+    float3 c = _VertPosBuffer[_TrianglesBuffer[triangleIndex]].xyz - _VertPosBuffer[_TrianglesBuffer[triangleIndex + 2]].xyz;
+
+    a = SafeNormalize(a);
+    b = SafeNormalize(b);
+    c = SafeNormalize(c);
+
+    float3 faceNormal = cross(a, -c);
+    faceNormal = SafeNormalize(faceNormal);
+
+    float3 dotProduct = float3(dot(a, -c), dot(b, -a), dot(c, -b));
+    dotProduct = clamp(dotProduct, 0, 1);
+
+    TriangleData triData = (TriangleData)0;
+    triData.faceNormal = float4(faceNormal, 1);
+    triData.vertWeights = float4(acos(dotProduct.x),
+                                 acos(dotProduct.y),
+                                 acos(dotProduct.z), 0);
+    triData.vertIndices = float4(_TrianglesBuffer[triangleIndex],
+                                 _TrianglesBuffer[triangleIndex + 1],
+                                 _TrianglesBuffer[triangleIndex + 2], 0);                             
+    _TriangleDataBuffer[id.x] = triData;
+}
+
+[numthreads(64,1,1)]
+void VertexMain (uint3 id : SV_DispatchThreadID)
+{
+    uint curVertIndex = id.x;
+    float3 averageNormal = 0;
+    float3 positionOS = _VertPosBuffer[curVertIndex].xyz;
+
+    for (uint triIndex = 0; triIndex < _TrianglesCounts / 3; triIndex++)
+    {
+        // Vertex position equals
+        uint triVertIndices[3] = {_TriangleDataBuffer[triIndex].vertIndices.x,
+                                _TriangleDataBuffer[triIndex].vertIndices.y,
+                                _TriangleDataBuffer[triIndex].vertIndices.z};
+        float vertWeights[3] = {_TriangleDataBuffer[triIndex].vertWeights.x,
+                                _TriangleDataBuffer[triIndex].vertWeights.y,
+                                _TriangleDataBuffer[triIndex].vertWeights.z};
+
+        for (uint triVertIndex = 0; triVertIndex < 3; triVertIndex++)
+        {
+            float3 triVertPositionDir = _VertPosBuffer[triVertIndices[triVertIndex]].xyz - positionOS.xyz;
+
+            if (dot(triVertPositionDir, triVertPositionDir) < DISTANCE_THRESHOLD)
+            {
+                averageNormal += _TriangleDataBuffer[triIndex].faceNormal.xyz * vertWeights[triVertIndex];
+            }
+        }
+    }
+    
+
+    averageNormal = SafeNormalize(averageNormal);
+
+    float3 normalOS = _VertNormalsBuffer[curVertIndex].xyz;
+    float3 tangentOS = _VertTangentsBuffer[curVertIndex].xyz;
+    float3 biTangentOS = cross(normalOS, tangentOS.xyz) * _VertTangentsBuffer[curVertIndex].w;
+
+    float3x3 TBN_TSOS= float3x3(tangentOS, biTangentOS, normalOS);
+    float3 smoothNormalOS = mul(TBN_TSOS, averageNormal);
+    smoothNormalOS = SafeNormalize(smoothNormalOS) * 0.5 + 0.5;
+
+    _SmoothNormalsBuffer[curVertIndex] = float4(smoothNormalOS, 0);
+}
+
