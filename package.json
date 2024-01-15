@@ -2,7 +2,6 @@
   "name": "com.danbaidong.smoothnormal",
   "version": "1.0.0",
   "displayName": "SmoothNormal",
-  "description": "This script computes smooth normals (for resolving outline rendering artifacts)\r when import models.",
   "unity": "2022.2",
   "documentationUrl": "https://github.com/danbaidong1111/SmoothNormal",
   "changelogUrl": "https://github.com/danbaidong1111/SmoothNormal/commits/main",
@@ -19,5 +18,6 @@
     "name": "Danbaidong",
     "email": "",
     "url": ""
-  }
+  },
+  "description": "This script computes smooth normals for resolving outline rendering artifacts when import models."
 }
