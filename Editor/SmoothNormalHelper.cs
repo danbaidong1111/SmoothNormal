@@ -163,7 +163,7 @@ namespace UnityEditor.SmoothNormalTool
             return smoothNormals;
         }
 
-        public static void CopyVector3NormalsToColor(ref Vector3[] smoothNormals, ref Color[] vertexColors, int size, bool retainColorA = false)
+        public static void CopyVector3NormalsToColorRGB(ref Vector3[] smoothNormals, ref Color[] vertexColors, int size, bool retainColorA)
         {
             if (retainColorA)
             {
@@ -179,7 +179,43 @@ namespace UnityEditor.SmoothNormalTool
                     vertexColors[i] = new Vector4(smoothNormals[i].x, smoothNormals[i].y, smoothNormals[i].z, 1);
                 }
             }
+        }
 
+        public static void CopyVector3NormalsToColorRG(ref Vector3[] smoothNormals, ref Color[] vertexColors, int size, bool retainColorA)
+        {
+            if (retainColorA)
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    vertexColors[i] = new Vector4(smoothNormals[i].x, smoothNormals[i].y, vertexColors[i].b, vertexColors[i].a);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    vertexColors[i] = new Vector4(smoothNormals[i].x, smoothNormals[i].y, 1, 1);
+                }
+            }
+        }
+
+        public static void CopyVector3NormalsToTangentXYZ(ref Vector3[] smoothNormals, ref Vector4[] vertexTangents, int size)
+        {
+            for (int i = 0; i < size; i++)
+            {
+                vertexTangents[i].x = smoothNormals[i].x;
+                vertexTangents[i].y = smoothNormals[i].y;
+                vertexTangents[i].z = smoothNormals[i].z;
+            }
+        }
+
+        public static void CopyVector3NormalsToTangentXY(ref Vector3[] smoothNormals, ref Vector4[] vertexTangents, int size)
+        {
+            for (int i = 0; i < size; i++)
+            {
+                vertexTangents[i].x = smoothNormals[i].x;
+                vertexTangents[i].y = smoothNormals[i].y;
+            }
         }
     }
 

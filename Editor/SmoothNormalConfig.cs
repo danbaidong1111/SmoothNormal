@@ -3,7 +3,6 @@ using System.Linq;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Rendering;
-using static UnityEngine.Rendering.ReloadAttribute;
 
 #if UNITY_EDITOR
 namespace UnityEditor.SmoothNormalTool
@@ -17,25 +16,69 @@ namespace UnityEditor.SmoothNormalTool
             public ComputeShader smoothNormalCS;
         }
 
-        public bool customConfig = false;
+        public enum MatchingMethod
+        {
+            NameSuffix,
+            FilePath
+        }
+
+        public enum WriteTarget
+        {
+            VertexColorRGB,
+            VertexColorRG,
+            TangentXYZ,
+            TangentXY,
+        }
+
+        public bool useUserConfig = false;
+        public string userConfigGUID = null;
 
         public ShaderResources shaders;
 
-        public string smoothNormalSuffix = "_SN";
+
+        public MatchingMethod matchingMethod = MatchingMethod.NameSuffix;
+        public string matchingNameSuffix = "_SN";
+        public string matchingFilePath = "Assets/SmoothNormal/";
+
+        public WriteTarget writeTarget = WriteTarget.VertexColorRGB;
+
         public static readonly string packagePath = "Packages/com.danbaidong.smoothnormal";
         public static readonly string editorAssetGUID = "ddc6b06df6aa2f441a30311bae4b8d7c";
 
         [MenuItem("Assets/Create/SmoothNormalGlobalConfig")]
         public static void CreateSmoothNormalGlobalConfig()
         {
-            var instance = CreateInstance<SmoothNormalConfig>();
-            ResourceReloader.ReloadAllNullIn(instance, packagePath);
-            AssetDatabase.CreateAsset(instance, string.Format("Assets/{0}.asset", typeof(SmoothNormalConfig).Name));
-
-            var m_Inst = SmoothNormalConfig.instance;
-            m_Inst.customConfig = true;
             string resourcePath = AssetDatabase.GUIDToAssetPath(editorAssetGUID);
-            InternalEditorUtility.SaveToSerializedFileAndForget(new[] { s_instance }, resourcePath, true);
+            var objs = InternalEditorUtility.LoadSerializedFileAndForget(resourcePath);
+            SmoothNormalConfig defaultGlobalConfig = objs != null && objs.Length > 0 ? objs.First() as SmoothNormalConfig : null;
+
+            if (defaultGlobalConfig == null)
+            {
+                Debug.LogError("Can't get defaultGlobalConfig guid: " + editorAssetGUID);
+                return;
+            }
+
+            if (defaultGlobalConfig.useUserConfig == true && !string.IsNullOrEmpty(defaultGlobalConfig.userConfigGUID))
+            {
+                var userConfigFile = AssetDatabase.LoadAssetAtPath<SmoothNormalConfig>(AssetDatabase.GUIDToAssetPath(defaultGlobalConfig.userConfigGUID));
+                if (userConfigFile != null)
+                {
+                    EditorGUIUtility.PingObject(userConfigFile);
+                    Debug.LogError("The user SmoothNormalGlobalConfig file can only have one instance.");
+                    return;
+                }
+            }
+
+            string currentFolder = AssetDatabase.GetAssetPath(Selection.activeObject);
+            var instance = CreateInstance<SmoothNormalConfig>();
+            var path = string.Format(currentFolder + "/{0}.asset", typeof(SmoothNormalConfig).Name);
+            ResourceReloader.ReloadAllNullIn(instance, packagePath);
+            AssetDatabase.CreateAsset(instance, path);
+            
+            // Set package's defaultConfig properties;
+            defaultGlobalConfig.useUserConfig = true;
+            defaultGlobalConfig.userConfigGUID = AssetDatabase.AssetPathToGUID(path);
+            InternalEditorUtility.SaveToSerializedFileAndForget(new[] { defaultGlobalConfig }, resourcePath, true);
             s_instance = null;
         }
 
@@ -47,37 +90,60 @@ namespace UnityEditor.SmoothNormalTool
                 if (s_instance != null)
                     return s_instance;
 
-                //var guidGlobalConfig = AssetDatabase.FindAssets("t:SmoothNormalConfig");
+                SmoothNormalConfig globalConfig = null;
 
                 string resourcePath = AssetDatabase.GUIDToAssetPath(editorAssetGUID);
                 var objs = InternalEditorUtility.LoadSerializedFileAndForget(resourcePath);
-                s_instance = objs != null && objs.Length > 0 ? objs.First() as SmoothNormalConfig : null;
+                globalConfig = objs != null && objs.Length > 0 ? objs.First() as SmoothNormalConfig : null;
+                s_instance = globalConfig;
+
+                if (globalConfig.useUserConfig)
+                {
+                    SmoothNormalConfig userConfig = null;
+                    string path = AssetDatabase.GUIDToAssetPath(globalConfig.userConfigGUID);
+                    userConfig = AssetDatabase.LoadAssetAtPath<SmoothNormalConfig>(path);
+                    if (userConfig != null)
+                    {
+                        s_instance = userConfig;
+                    }
+                    else
+                    {
+                        Debug.LogError("User Config not found, back to default Config.");
+                        s_instance.useUserConfig = false;
+                        s_instance.userConfigGUID = null;
+                        InternalEditorUtility.SaveToSerializedFileAndForget(new[] { s_instance }, resourcePath, true);
+                    }
+                }
 
                 return s_instance;
             }
-        }
-
-        public static void ReloadConfig()
-        {
-            Debug.Log("ReloadConfig");
         }
     }
 
     [CustomEditor(typeof(SmoothNormalConfig))]
     public class SmoothNormalConfigEditor : Editor
     {
-        private SerializedProperty m_SmoothNormalSuffix;
         private SerializedProperty m_Shaders;
+        private SerializedProperty m_MatchingMethod;
+        private SerializedProperty m_MatchingNameSuffix;
+        private SerializedProperty m_MatchingFilePath;
+        private SerializedProperty m_WriteTarget;
+        private SerializedProperty m_UserConfig;
 
-        private SerializedProperty m_CustomConfig;
-
+        private string curGuid = null;
         private bool isDirty = false;
 
         private void OnEnable()
         {
-            m_SmoothNormalSuffix = serializedObject.FindProperty(nameof(SmoothNormalConfig.smoothNormalSuffix));
             m_Shaders = serializedObject.FindProperty(nameof(SmoothNormalConfig.shaders));
-            m_CustomConfig = serializedObject.FindProperty(nameof(SmoothNormalConfig.customConfig));
+            m_MatchingMethod = serializedObject.FindProperty(nameof(SmoothNormalConfig.matchingMethod));
+            m_MatchingNameSuffix = serializedObject.FindProperty(nameof(SmoothNormalConfig.matchingNameSuffix));
+            m_MatchingFilePath = serializedObject.FindProperty(nameof(SmoothNormalConfig.matchingFilePath));
+            m_WriteTarget = serializedObject.FindProperty(nameof(SmoothNormalConfig.writeTarget));
+            m_UserConfig = serializedObject.FindProperty(nameof(SmoothNormalConfig.useUserConfig));
+
+            string assetPath = AssetDatabase.GetAssetPath(target);
+            curGuid = AssetDatabase.AssetPathToGUID(assetPath);
 
             isDirty = false;
         }
@@ -89,9 +155,23 @@ namespace UnityEditor.SmoothNormalTool
         {
             EditorGUI.BeginChangeCheck();
 
-            EditorGUILayout.PropertyField(m_SmoothNormalSuffix);
             EditorGUILayout.PropertyField(m_Shaders);
-            EditorGUILayout.PropertyField(m_CustomConfig);
+
+            EditorGUILayout.PropertyField(m_MatchingMethod);
+            if (m_MatchingMethod.intValue == (int)SmoothNormalConfig.MatchingMethod.NameSuffix)
+            {
+                EditorGUILayout.PropertyField(m_MatchingNameSuffix);
+            }
+            else
+            {
+                EditorGUILayout.PropertyField(m_MatchingFilePath);
+            }            
+            EditorGUILayout.PropertyField(m_WriteTarget);
+
+            if (!string.IsNullOrEmpty(curGuid) && curGuid.Equals(SmoothNormalConfig.editorAssetGUID))
+            {
+                EditorGUILayout.PropertyField(m_UserConfig);
+            }
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -108,8 +188,11 @@ namespace UnityEditor.SmoothNormalTool
                 var objs = InternalEditorUtility.LoadSerializedFileAndForget(resourcePath);
                 var instance = objs != null && objs.Length > 0 ? objs.First() as SmoothNormalConfig : null;
 
-                Debug.Log("instance Custom Config: " + instance.customConfig);
-                Debug.Log(((SmoothNormalConfig)serializedObject.targetObject).smoothNormalSuffix + ", " + SmoothNormalConfig.instance.smoothNormalSuffix);
+                Debug.Log("useUserConfig: " + instance.useUserConfig);
+
+                Debug.Log("userConfigGUID: " + instance.userConfigGUID);
+
+                Debug.Log("Current Config: " + "sufix: " + SmoothNormalConfig.instance.matchingNameSuffix);
             }
 
             EditorGUI.BeginDisabledGroup(!isDirty);
@@ -123,10 +206,6 @@ namespace UnityEditor.SmoothNormalTool
             {
                 serializedObject.ApplyModifiedProperties();
                 serializedObject.Update();
-
-
-
-                SmoothNormalConfig.ReloadConfig();
 
                 isDirty = false;
             }
