@@ -137,14 +137,14 @@ namespace UnityEditor.SmoothNormalTool
 
             smoothNormalsBuffer.GetData(smoothNormalsArray);
 
-            string debugstr = "TriNum: " + mesh.triangles.Length + ", DispatchNum: " + DivRoundUp(mesh.triangles.Length / 3, 64)
-                            + ", vertNum: " + mesh.vertices.Length + "\n";
-            foreach (float4 f3 in smoothNormalsArray)
-            {
-                debugstr += f3 + "\n";
-            }
+            //string debugstr = "TriNum: " + mesh.triangles.Length + ", DispatchNum: " + DivRoundUp(mesh.triangles.Length / 3, 64)
+            //                + ", vertNum: " + mesh.vertices.Length + "\n";
+            //foreach (float4 f3 in smoothNormalsArray)
+            //{
+            //    debugstr += f3 + "\n";
+            //}
 
-            Debug.Log(debugstr);
+            //Debug.Log(debugstr);
 
             // Release Resources
             vertPosBuffer?.Release();

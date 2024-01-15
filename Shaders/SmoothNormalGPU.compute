@@ -1,6 +1,5 @@
-#pragma kernel CSMain
-#pragma kernel VertexMain
-// #pragma kernel SmoothNormalMain
+#pragma kernel ComputeTriangles
+#pragma kernel ComputeSmoothNormals
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 
@@ -25,7 +24,7 @@ RWBuffer<float4> _SmoothNormalsBuffer;
 RWStructuredBuffer<TriangleData> _TriangleDataBuffer;
 
 [numthreads(64,1,1)]
-void CSMain (uint3 id : SV_DispatchThreadID)
+void ComputeTriangles (uint3 id : SV_DispatchThreadID)
 {
     uint triangleIndex = id.x * 3;
     if (triangleIndex + 2 > _TrianglesCounts)
@@ -57,7 +56,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 }
 
 [numthreads(64,1,1)]
-void VertexMain (uint3 id : SV_DispatchThreadID)
+void ComputeSmoothNormals (uint3 id : SV_DispatchThreadID)
 {
     uint curVertIndex = id.x;
     float3 averageNormal = 0;
@@ -65,7 +64,6 @@ void VertexMain (uint3 id : SV_DispatchThreadID)
 
     for (uint triIndex = 0; triIndex < _TrianglesCounts / 3; triIndex++)
     {
-        // Vertex position equals
         uint triVertIndices[3] = {_TriangleDataBuffer[triIndex].vertIndices.x,
                                 _TriangleDataBuffer[triIndex].vertIndices.y,
                                 _TriangleDataBuffer[triIndex].vertIndices.z};

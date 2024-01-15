@@ -1,16 +1,24 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.IO;
 
 #if UNITY_EDITOR
 namespace UnityEditor.SmoothNormalTool
 {
+    /// <summary>
+    /// Hook into the import pipeline, compute smoothNormal and write it to mesh data.
+    /// Note that we only changed UNITY's mesh data, the original modelfile has not changed.
+    /// </summary>
     public class SmoothNormalPostprocessor : AssetPostprocessor
     {
+        /// <summary>
+        /// After importing model.
+        /// </summary>
+        /// <param name="gameObject"></param>
         private void OnPostprocessModel(GameObject gameObject)
         {
             SmoothNormalConfig config = SmoothNormalConfig.instance;
 
+            // Matching file
             switch (config.matchingMethod)
             {
                 case SmoothNormalConfig.MatchingMethod.NameSuffix:
@@ -48,7 +56,7 @@ namespace UnityEditor.SmoothNormalTool
                 }
             }
 
-            // Calculate smoothNormals
+            // Compute smoothNormals
             {
                 foreach (Mesh mesh in meshes)
                 {
@@ -66,7 +74,6 @@ namespace UnityEditor.SmoothNormalTool
                     }
                     
                     Vector3[] smoothNormals = SmoothNormalHelper.ComputeSmoothNormal(mesh, smoothNormalCS);
-
                     Vector4[] tangents = mesh.tangents;
                     switch (config.writeTarget)
                     {
@@ -92,7 +99,7 @@ namespace UnityEditor.SmoothNormalTool
             }
 
             stopwatch.Stop();
-            Debug.Log("Generate smoothNormal use: " + ((stopwatch.ElapsedMilliseconds - lastTimeStamp) * 0.001).ToString("F3") + "s");
+            Debug.Log("Generate " + gameObject.name + " smoothNormal use: " + ((stopwatch.ElapsedMilliseconds - lastTimeStamp) * 0.001).ToString("F3") + "s");
         }
     }
 }
