@@ -4,8 +4,8 @@
   "displayName": "SmoothNormal",
   "description": "This script computes smooth normals (for resolving outline rendering artifacts)\r when import models.",
   "unity": "2022.2",
-  "documentationUrl": "",
-  "changelogUrl": "",
+  "documentationUrl": "https://github.com/danbaidong1111/SmoothNormal",
+  "changelogUrl": "https://github.com/danbaidong1111/SmoothNormal/commits/main",
   "dependencies": {
     "com.unity.mathematics": "1.2.1",
     "com.unity.burst": "1.8.4",
