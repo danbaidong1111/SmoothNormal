@@ -14,6 +14,7 @@ namespace UnityEditor.SmoothNormalTool
         private SerializedProperty m_MatchingNameSuffix;
         private SerializedProperty m_MatchingFilePath;
         private SerializedProperty m_WriteTarget;
+        private SerializedProperty m_VertDistThreshold;
         private SerializedProperty m_UserConfig;
         private SerializedProperty m_UserConfigGUID;
 
@@ -27,6 +28,7 @@ namespace UnityEditor.SmoothNormalTool
             m_MatchingNameSuffix = serializedObject.FindProperty(nameof(SmoothNormalConfig.matchingNameSuffix));
             m_MatchingFilePath = serializedObject.FindProperty(nameof(SmoothNormalConfig.matchingFilePath));
             m_WriteTarget = serializedObject.FindProperty(nameof(SmoothNormalConfig.writeTarget));
+            m_VertDistThreshold = serializedObject.FindProperty(nameof(SmoothNormalConfig.vertDistThresold));
             m_UserConfig = serializedObject.FindProperty(nameof(SmoothNormalConfig.useUserConfig));
             m_UserConfigGUID = serializedObject.FindProperty(nameof(SmoothNormalConfig.userConfigGUID));
 
@@ -55,6 +57,7 @@ namespace UnityEditor.SmoothNormalTool
                 EditorGUILayout.PropertyField(m_MatchingFilePath);
             }
             EditorGUILayout.PropertyField(m_WriteTarget);
+            EditorGUILayout.PropertyField(m_VertDistThreshold);
             if (!string.IsNullOrEmpty(curGuid) && curGuid.Equals(SmoothNormalConfig.editorAssetGUID))
             {
                 EditorGUILayout.PropertyField(m_UserConfig);

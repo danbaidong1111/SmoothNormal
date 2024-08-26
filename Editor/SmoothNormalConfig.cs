@@ -54,6 +54,9 @@ namespace UnityEditor.SmoothNormalTool
 
         public WriteTarget writeTarget = WriteTarget.VertexColorRGB;
 
+        [Range(1e-20f, 1e-8f)]
+        public float vertDistThresold = 1e-14f;
+
         public static readonly string packagePath = "Packages/com.danbaidong.smoothnormal";
         public static readonly string editorAssetGUID = "ddc6b06df6aa2f441a30311bae4b8d7c";
 

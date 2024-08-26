@@ -20,3 +20,4 @@ MonoBehaviour:
   matchingNameSuffix: _SN
   matchingFilePath: Assets/SmoothNormal/
   writeTarget: 0
+  vertDistThresold: 1e-14

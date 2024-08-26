@@ -10,6 +10,7 @@ namespace UnityEditor.SmoothNormalTool
     /// </summary>
     public class SmoothNormalPostprocessor : AssetPostprocessor
     {
+        private static int s_DISTANCE_THRESHOLD = Shader.PropertyToID("_DISTANCE_THRESHOLD");
         /// <summary>
         /// After importing model.
         /// </summary>
@@ -35,6 +36,8 @@ namespace UnityEditor.SmoothNormalTool
             }
 
             ComputeShader smoothNormalCS = config.shaders.smoothNormalCS;
+            smoothNormalCS.SetFloat(s_DISTANCE_THRESHOLD, config.vertDistThresold);
+            Debug.Log(config.vertDistThresold);
 
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
