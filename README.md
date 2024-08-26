@@ -16,7 +16,7 @@ This tool treats nearby vertices in the model as a single vertex, so make sure t
 
 # Usage
 
-You can add this package by UPM (Unity Packages Manager), url like: `https://github.com/danbaidong1111/SmoothNormal.git#v1.0.1`.
+You can add this package by UPM (Unity Packages Manager), url like: `https://github.com/danbaidong1111/SmoothNormal.git`.
 
 The SmoothNormal package filters objects during model import based on the model's name or import path. When a matching model is imported, smooth normals are calculated and ultimately stored in vertex colors or tangents. Users can create their own custom config file by right-clicking in UnityAsset -> Create -> SmoothNormalGlobalConfig. This user-defined config file is globally unique. The default config file is located in the package directory under the "Runtime" folder, named "SmoothNormalAsset." You can determine the current configuration used by checking the "Use User Config" field here.
 
