@@ -27,3 +27,6 @@ Config Properties:
 * Write Target: Write smoothnormal data to `vertetx color` RGB, RG or `tangent` RGB, RG.
 * Vert Dist Thresold: Vertex diatance squre < value will treate as a single vertex. See SmoothNormalGPU computeshader.
 
+# Important
+Model vertexes should merged by distance.
+
